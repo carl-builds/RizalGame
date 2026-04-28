@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sino si Jose Rizal? – Quiz Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sun:#FFD93D; --sky:#4FC3F7; --leaf:#56C596;
+  --rose:#FF6B6B; --navy:#1A237E; --shadow:rgba(26,35,126,0.15);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Nunito',sans-serif;
+  background:linear-gradient(135deg,#e0f7fa 0%,#f3e5f5 50%,#fff9c4 100%);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:16px;overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(circle at 10% 20%,rgba(255,217,61,.18) 0%,transparent 40%),
+             radial-gradient(circle at 90% 80%,rgba(86,197,150,.18) 0%,transparent 40%),
+             radial-gradient(circle at 80% 10%,rgba(79,195,247,.18) 0%,transparent 40%);
+  pointer-events:none;z-index:0;
+}
+#app{position:relative;z-index:1;width:100%;max-width:580px;}
+
+.card{
+  background:white;border-radius:28px;padding:30px 26px;
+  box-shadow:0 8px 40px var(--shadow),0 2px 8px rgba(0,0,0,.06);
+  position:relative;overflow:hidden;
+}
+.card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:6px;
+  background:linear-gradient(90deg,var(--rose),var(--sun),var(--leaf),var(--sky));
+  border-radius:28px 28px 0 0;
+}
+.screen{display:none;}.screen.active{display:block;}
+
+/* ══ SHARED UTIL ══ */
+.hero-emoji{font-size:4.2rem;display:block;margin-bottom:6px;animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.author-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  background:linear-gradient(135deg,#f3e5f5,#e8eaf6);
+  border:1.5px solid #CE93D8;border-radius:999px;
+  padding:6px 16px;font-size:.8rem;font-weight:800;color:#6A1B9A;letter-spacing:.2px;
+}
+.section-title{font-family:'Fredoka One',cursive;font-size:1rem;color:var(--navy);margin-bottom:12px;letter-spacing:.5px;}
+
+/* ══ NAME SCREEN ══ */
+#nameScreen{text-align:center;padding:6px 0;}
+#nameScreen h1{font-family:'Fredoka One',cursive;font-size:2rem;color:var(--navy);line-height:1.2;margin-bottom:6px;}
+#nameScreen .subtitle{color:#777;font-size:.88rem;margin-bottom:16px;font-weight:600;}
+.name-input-wrap{position:relative;margin:0 auto 22px;max-width:320px;}
+#playerNameInput{
+  width:100%;padding:14px 50px 14px 18px;
+  font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:700;
+  border:2.5px solid #DDE3FF;border-radius:16px;color:var(--navy);
+  outline:none;transition:border-color .2s,box-shadow .2s;background:#F8F9FF;
+}
+#playerNameInput:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(79,195,247,.2);}
+#playerNameInput::placeholder{color:#bbb;font-weight:600;}
+.name-emoji-hint{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:1.3rem;pointer-events:none;}
+
+/* ══ START / DIFF SCREEN ══ */
+#startScreen{text-align:center;padding:6px 0;}
+.player-greeting{
+  display:inline-flex;align-items:center;gap:8px;
+  background:#EEF2FF;border-radius:999px;padding:8px 18px;
+  font-weight:800;color:var(--navy);font-size:.92rem;margin-bottom:20px;
+}
+.diff-grid{display:flex;gap:10px;justify-content:center;margin-bottom:26px;}
+.diff-btn{
+  flex:1;max-width:160px;border:3px solid transparent;border-radius:20px;
+  padding:14px 8px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:800;
+  transition:transform .15s,box-shadow .15s,border-color .15s;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+}
+.diff-btn .diff-icon{font-size:1.8rem;}
+.diff-btn .diff-name{font-family:'Fredoka One',cursive;font-size:1rem;}
+.diff-btn .diff-desc{font-size:.74rem;font-weight:600;opacity:.75;}
+.diff-btn.easy{background:#E8F5E9;color:#2E7D32;}
+.diff-btn.medium{background:#FFF8E1;color:#E65100;}
+.diff-btn.hard{background:#FCE4EC;color:#880E4F;}
+.diff-btn:hover{transform:translateY(-4px) scale(1.04);}
+.diff-btn.easy:hover,.diff-btn.easy.selected{box-shadow:0 8px 24px rgba(56,142,60,.35);border-color:#56C596;}
+.diff-btn.medium:hover,.diff-btn.medium.selected{box-shadow:0 8px 24px rgba(230,81,0,.35);border-color:#FFD93D;}
+.diff-btn.hard:hover,.diff-btn.hard.selected{box-shadow:0 8px 24px rgba(136,14,79,.35);border-color:#FF6B6B;}
+.diff-btn.selected{transform:translateY(-4px) scale(1.04);}
+
+.big-btn{
+  border:none;border-radius:20px;padding:16px 44px;
+  font-family:'Fredoka One',cursive;font-size:1.2rem;cursor:pointer;
+  transition:transform .15s,box-shadow .15s,opacity .2s;letter-spacing:.5px;
+}
+.btn-red{background:linear-gradient(135deg,var(--rose),#E91E63);color:white;box-shadow:0 6px 24px rgba(255,107,107,.45);}
+.btn-green{background:linear-gradient(135deg,var(--leaf),#2E7D32);color:white;box-shadow:0 6px 20px rgba(86,197,150,.4);}
+.btn-purple{background:linear-gradient(135deg,#CE93D8,#7B1FA2);color:white;box-shadow:0 6px 20px rgba(123,31,162,.3);}
+.btn-navy{background:linear-gradient(135deg,#3949AB,var(--navy));color:white;box-shadow:0 6px 20px rgba(26,35,126,.35);}
+.big-btn:hover{transform:translateY(-2px) scale(1.03);}
+.big-btn:active{transform:scale(.97);}
+.big-btn.dimmed{opacity:.45;pointer-events:none;}
+
+/* ══ QUIZ SCREEN ══ */
+.game-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;}
+.lives{font-size:1.25rem;}
+.score-badge{background:var(--navy);color:white;font-family:'Fredoka One',cursive;font-size:.9rem;padding:6px 13px;border-radius:999px;}
+.diff-pill{font-family:'Fredoka One',cursive;font-size:.78rem;padding:4px 11px;border-radius:999px;font-weight:800;}
+.diff-pill.easy{background:#E8F5E9;color:#2E7D32;}
+.diff-pill.medium{background:#FFF8E1;color:#E65100;}
+.diff-pill.hard{background:#FCE4EC;color:#880E4F;}
+.progress-bar-wrap{background:#EEF2FF;border-radius:999px;height:10px;margin-bottom:20px;overflow:hidden;}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--sky),var(--leaf));border-radius:999px;transition:width .5s ease;}
+.q-number{font-family:'Fredoka One',cursive;color:var(--sky);font-size:.82rem;letter-spacing:1px;margin-bottom:6px;text-transform:uppercase;}
+.q-text{font-size:1.15rem;font-weight:800;color:var(--navy);line-height:1.45;margin-bottom:20px;}
+.choices{display:flex;flex-direction:column;gap:10px;}
+.choice-btn{
+  display:flex;align-items:center;gap:14px;background:#F8F9FF;
+  border:2.5px solid #DDE3FF;border-radius:16px;padding:12px 16px;
+  cursor:pointer;font-family:'Nunito',sans-serif;font-size:.98rem;
+  font-weight:700;color:var(--navy);text-align:left;
+  transition:transform .15s,box-shadow .15s,background .15s,border-color .15s;
+}
+.choice-btn:hover:not(:disabled){transform:translateY(-3px) scale(1.02);box-shadow:0 6px 20px var(--shadow);background:#EEF2FF;border-color:var(--sky);}
+.choice-btn:active:not(:disabled){transform:scale(.97);}
+.choice-letter{min-width:32px;height:32px;background:white;border:2px solid #DDE3FF;border-radius:50%;display:grid;place-items:center;font-family:'Fredoka One',cursive;font-size:.95rem;color:var(--sky);transition:background .2s,color .2s;flex-shrink:0;}
+.choice-btn.correct{background:#E8F5E9;border-color:var(--leaf);color:#2E7D32;}
+.choice-btn.correct .choice-letter{background:var(--leaf);color:white;border-color:var(--leaf);}
+.choice-btn.wrong{background:#FFEBEE;border-color:var(--rose);color:#C62828;}
+.choice-btn.wrong .choice-letter{background:var(--rose);color:white;border-color:var(--rose);}
+.choice-btn:disabled{cursor:default;}
+.feedback{margin-top:16px;border-radius:16px;padding:13px 16px;font-weight:700;font-size:.95rem;display:none;align-items:flex-start;gap:10px;line-height:1.5;}
+.feedback.show{display:flex;}
+.feedback.correct-fb{background:#E8F5E9;color:#2E7D32;}
+.feedback.wrong-fb{background:#FFEBEE;color:#C62828;}
+.feedback-icon{font-size:1.3rem;flex-shrink:0;margin-top:1px;}
+.paliwanag{margin-top:3px;font-weight:600;color:#555;font-size:.88rem;}
+#nextBtn{display:none;margin-top:16px;width:100%;background:linear-gradient(135deg,var(--sky),#1976D2);color:white;border:none;border-radius:16px;padding:14px;font-family:'Fredoka One',cursive;font-size:1.05rem;cursor:pointer;letter-spacing:.5px;box-shadow:0 4px 16px rgba(79,195,247,.4);transition:transform .15s,box-shadow .15s;}
+#nextBtn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(79,195,247,.5);}
+
+/* ══ END SCREEN ══ */
+#endScreen{text-align:center;padding:6px 0;}
+#endScreen .hero-emoji{animation:spin-bounce .8s ease-out;}
+@keyframes spin-bounce{0%{transform:rotate(-30deg) scale(.5)}60%{transform:rotate(10deg) scale(1.15)}100%{transform:rotate(0) scale(1)}}
+#endScreen h2{font-family:'Fredoka One',cursive;font-size:1.85rem;color:var(--navy);margin-bottom:4px;}
+#endScore{font-family:'Fredoka One',cursive;font-size:3rem;color:var(--rose);margin:8px 0;}
+.end-diff-badge{display:inline-block;margin-bottom:6px;font-family:'Fredoka One',cursive;font-size:.88rem;padding:4px 13px;border-radius:999px;}
+.end-diff-badge.easy{background:#E8F5E9;color:#2E7D32;}
+.end-diff-badge.medium{background:#FFF8E1;color:#E65100;}
+.end-diff-badge.hard{background:#FCE4EC;color:#880E4F;}
+#endMsg{font-size:.95rem;font-weight:700;color:#555;margin-bottom:18px;}
+.end-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;}
+.end-author{padding-top:14px;border-top:1.5px dashed #EEE;font-size:.78rem;font-weight:800;color:#bbb;}
+
+/* ══ LEADERBOARD SCREEN ══ */
+#lbScreen{padding:4px 0;}
+#lbScreen h2{font-family:'Fredoka One',cursive;font-size:1.7rem;color:var(--navy);margin-bottom:4px;text-align:center;}
+#lbScreen .lb-sub{font-size:.82rem;font-weight:600;color:#888;text-align:center;margin-bottom:16px;}
+
+.lb-tabs{display:flex;gap:6px;margin-bottom:16px;background:#F0F4FF;border-radius:14px;padding:4px;}
+.lb-tab{flex:1;padding:8px 4px;border:none;border-radius:10px;font-family:'Fredoka One',cursive;font-size:.85rem;cursor:pointer;background:transparent;color:#8896CC;transition:background .2s,color .2s;}
+.lb-tab.active.easy{background:#E8F5E9;color:#2E7D32;}
+.lb-tab.active.medium{background:#FFF8E1;color:#E65100;}
+.lb-tab.active.hard{background:#FCE4EC;color:#880E4F;}
+
+.lb-list{display:flex;flex-direction:column;gap:8px;min-height:180px;}
+.lb-empty{text-align:center;padding:40px 0;font-weight:700;color:#ccc;font-size:.95rem;}
+.lb-loading{text-align:center;padding:40px 0;font-size:1.5rem;animation:spin 1s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.lb-row{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 14px;border-radius:14px;
+  background:#F8F9FF;border:2px solid #EEF2FF;
+  transition:transform .15s;
+}
+.lb-row.gold  {background:linear-gradient(135deg,#FFFDE7,#FFF9C4);border-color:#FFD93D;}
+.lb-row.silver{background:linear-gradient(135deg,#F5F5F5,#EEEEEE);border-color:#BDBDBD;}
+.lb-row.bronze{background:linear-gradient(135deg,#FBE9E7,#FFCCBC);border-color:#FFAB91;}
+.lb-rank{font-family:'Fredoka One',cursive;font-size:1.2rem;min-width:32px;text-align:center;}
+.lb-name{font-weight:800;color:var(--navy);font-size:.95rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lb-score{font-family:'Fredoka One',cursive;font-size:1rem;color:var(--rose);}
+.lb-diff-tag{font-size:.7rem;font-weight:800;padding:2px 8px;border-radius:999px;flex-shrink:0;}
+.lb-diff-tag.easy{background:#E8F5E9;color:#2E7D32;}
+.lb-diff-tag.medium{background:#FFF8E1;color:#E65100;}
+.lb-diff-tag.hard{background:#FCE4EC;color:#880E4F;}
+.lb-date{font-size:.72rem;color:#aaa;font-weight:600;flex-shrink:0;}
+
+.lb-btns{display:flex;gap:10px;margin-top:16px;justify-content:center;flex-wrap:wrap;}
+
+/* ══ ANIMATIONS ══ */
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+.shake{animation:shake .5s ease;}
+@keyframes pop-in{0%{transform:scale(.85);opacity:0}70%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+.pop-in{animation:pop-in .35s ease forwards;}
+#confetti-container{position:fixed;inset:0;pointer-events:none;z-index:100;overflow:hidden;}
+.confetti-piece{position:absolute;animation:confetti-fall linear forwards;}
+@keyframes confetti-fall{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+#star-container{position:fixed;inset:0;pointer-events:none;z-index:100;display:flex;align-items:center;justify-content:center;}
+.star-burst{font-size:3rem;display:none;}
+@keyframes star-pop{0%{transform:scale(0) rotate(-30deg);opacity:1}60%{transform:scale(1.4) rotate(10deg);opacity:1}100%{transform:scale(0) rotate(20deg);opacity:0}}
+</style>
+</head>
+<body>
+<div id="confetti-container"></div>
+<div id="star-container"><div class="star-burst" id="starBurst">⭐</div></div>
+
+<div id="app"><div class="card">
+
+  <!-- ══ NAME SCREEN ══ -->
+  <div class="screen active" id="nameScreen">
+    <div style="text-align:center;padding:6px 0;">
+      <span class="hero-emoji">🦅</span>
+      <h1>Sino si Jose Rizal?</h1>
+      <p class="subtitle">Quiz Game para sa mga Bayani ng Kaalaman!</p>
+      <div style="margin-bottom:20px"><div class="author-badge">✍️ &nbsp;Carl Justin Erondo &amp; Emily Victoria Santos</div></div>
+      <div class="section-title">👤 Ilagay ang iyong pangalan</div>
+      <div class="name-input-wrap">
+        <input id="playerNameInput" type="text" maxlength="20" placeholder="Hal. Juan dela Cruz" autocomplete="off" oninput="onNameInput()">
+        <span class="name-emoji-hint">✏️</span>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="big-btn btn-red dimmed" id="continueBtn" onclick="goToDiff()">Susunod ➡️</button>
+        <button class="big-btn btn-navy" onclick="showLeaderboard('easy')">🏆 Leaderboard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DIFFICULTY SCREEN ══ -->
+  <div class="screen" id="startScreen">
+    <div style="text-align:center;padding:6px 0;">
+      <span class="hero-emoji">🎮</span>
+      <div class="player-greeting" id="playerGreeting">👋 Kumusta, Player!</div>
+      <div class="section-title">🎯 Piliin ang Antas ng Kahirapan</div>
+      <div class="diff-grid">
+        <button class="diff-btn easy"   onclick="selectDiff('easy',this)"><span class="diff-icon">🌱</span><span class="diff-name">Madali</span><span class="diff-desc">Para sa mga baguhan</span></button>
+        <button class="diff-btn medium" onclick="selectDiff('medium',this)"><span class="diff-icon">🔥</span><span class="diff-name">Katamtaman</span><span class="diff-desc">Kaya mo 'yan!</span></button>
+        <button class="diff-btn hard"   onclick="selectDiff('hard',this)"><span class="diff-icon">💀</span><span class="diff-name">Mahirap</span><span class="diff-desc">Para sa mga eksperto</span></button>
+      </div>
+      <button class="big-btn btn-red dimmed" id="startBtn" onclick="startGame()">Maglaro Na! 🎮</button>
+    </div>
+  </div>
+
+  <!-- ══ QUIZ SCREEN ══ -->
+  <div class="screen" id="quizScreen">
+    <div class="game-header">
+      <div class="lives" id="livesDisplay">❤️❤️❤️</div>
+      <div id="diffPill" class="diff-pill easy">🌱 Madali</div>
+      <div class="score-badge">Score: <span id="scoreDisplay">0</span></div>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    <div class="q-number" id="qNumber">Tanong 1 ng 7</div>
+    <div class="q-text pop-in" id="qText"></div>
+    <div class="choices" id="choicesContainer"></div>
+    <div class="feedback" id="feedback">
+      <div class="feedback-icon" id="feedbackIcon"></div>
+      <div><div id="feedbackMsg"></div><div class="paliwanag" id="feedbackExplain"></div></div>
+    </div>
+    <button id="nextBtn">Susunod na Tanong ➡️</button>
+  </div>
+
+  <!-- ══ END SCREEN ══ -->
+  <div class="screen" id="endScreen">
+    <span class="hero-emoji" id="endEmoji">🏆</span>
+    <div id="endDiffBadge" class="end-diff-badge easy"></div>
+    <h2 id="endTitle">Magaling!</h2>
+    <div id="endScore">0 / 7</div>
+    <div id="endMsg"></div>
+    <div class="end-btns">
+      <button class="big-btn btn-green" onclick="startGame()">Ulit! 🔄</button>
+      <button class="big-btn btn-purple" onclick="goToDiff()">Palitan Antas 🎯</button>
+      <button class="big-btn btn-navy" onclick="showLeaderboard(diff)">🏆 Leaderboard</button>
+    </div>
+    <div class="end-author">✍️ Ginawa nina Carl Justin Erondo &amp; Emily Victoria Santos</div>
+  </div>
+
+  <!-- ══ LEADERBOARD SCREEN ══ -->
+  <div class="screen" id="lbScreen">
+    <h2>🏆 Leaderboard</h2>
+    <p class="lb-sub">Top scores ng lahat ng manlalaro!</p>
+    <div class="lb-tabs">
+      <button class="lb-tab active easy"   id="tab-easy"   onclick="switchTab('easy')">🌱 Madali</button>
+      <button class="lb-tab medium"        id="tab-medium" onclick="switchTab('medium')">🔥 Katamtaman</button>
+      <button class="lb-tab hard"          id="tab-hard"   onclick="switchTab('hard')">💀 Mahirap</button>
+    </div>
+    <div class="lb-list" id="lbList"><div style="text-align:center;padding:40px 0;font-size:1.5rem;">⏳</div></div>
+    <div class="lb-btns">
+      <button class="big-btn btn-red"    id="lbBackBtn"   onclick="lbBack()">⬅️ Bumalik</button>
+      <button class="big-btn btn-green"  id="lbPlayBtn"   onclick="lbPlay()" style="display:none">Maglaro! 🎮</button>
+    </div>
+    <div class="end-author" style="margin-top:12px;">✍️ Carl Justin Erondo &amp; Emily Victoria Santos</div>
+  </div>
+
+</div></div>
+
+<script>
+/* ═══════════════════════════════════════════
+   QUESTION DATA
+═══════════════════════════════════════════ */
+const allQ = {
+  easy:[
+    {q:"Sino ang Pambansang Bayani ng Pilipinas?",c:["Andres Bonifacio","Jose Rizal","Emilio Aguinaldo"],a:1,e:"Si Jose Rizal ang ating Pambansang Bayani dahil ginamit niya ang kanyang panulat para ipaglaban ang kalayaan."},
+    {q:"Saan ipinanganak si Jose Rizal?",c:["Maynila","Cebu","Calamba, Laguna"],a:2,e:"Ipinanganak si Jose Rizal noong Hunyo 19, 1861 sa Calamba, Laguna."},
+    {q:"Ano ang unang nobela na isinulat ni Jose Rizal?",c:["El Filibusterismo","Florante at Laura","Noli Me Tangere"],a:2,e:"Ang Noli Me Tangere (1887) ang unang nobela ni Rizal na nagpapakita ng hirap ng mga Pilipino sa ilalim ng Kastila."},
+    {q:"Saan pinatapón si Jose Rizal ng mga Kastila?",c:["Palawan","Dapitan, Zamboanga del Norte","Batanes"],a:1,e:"Pinaalis si Rizal sa Dapitan mula 1892 hanggang 1896; doon siya nag-doktor, nagturo, at nag-aral ng agham."},
+    {q:"Ano ang pangalan ng huling tula ni Jose Rizal?",c:["Bayan Ko","Mi Ultimo Adios","Lupang Hinirang"],a:1,e:"Ang 'Mi Ultimo Adios' (Aking Huling Paalam) ang huling tula ni Rizal na isinulat bago siya barilin."},
+    {q:"Kailan ipinanganak si Jose Rizal?",c:["Hunyo 19, 1861","Disyembre 30, 1896","Marso 12, 1870"],a:0,e:"Ipinanganak si Rizal noong Hunyo 19, 1861 sa Calamba, Laguna."},
+    {q:"Ano ang trabaho ni Jose Rizal bilang propesyonal?",c:["Abogado","Doktor / Manggagamot","Guro"],a:1,e:"Si Rizal ay isang doktor at naging dalubhasa pa sa sakit ng mga mata (ophthalmologist)."},
+    {q:"Ano ang tawag sa araw ng kamatayan ni Jose Rizal?",c:["Araw ng Kalayaan","Rizal Day","Araw ng Kagitingan"],a:1,e:"Ang Disyembre 30 ay ipinagdiriwang bilang Rizal Day — pambansang holiday bilang paggunita sa kanyang pagpapakasakit."},
+    {q:"Sino ang magulang na lalaki ni Jose Rizal?",c:["Francisco Rizal Mercado","Juan Rizal","Pedro Mercado"],a:0,e:"Ang ama ni Rizal ay si Francisco Rizal Mercado, isang magsasakang may kaalaman at deboto."},
+    {q:"Sa anong probinsya matatagpuan ang Calamba, lugar ng kapanganakan ni Rizal?",c:["Batangas","Laguna","Cavite"],a:1,e:"Ang Calamba ay nasa probinsya ng Laguna — isang lugar na puno ng kasaysayan at likas na kagandahan."},
+  ],
+  medium:[
+    {q:"Ano ang ibig sabihin ng 'Noli Me Tangere'?",c:["Huwag Akong Salingin","Mahal Kita","Kalayaan Ko"],a:0,e:"'Noli Me Tangere' ay Latin na ang ibig sabihin ay 'Huwag Akong Salingin' o 'Huwag Mo Akong Hawakan.'"},
+    {q:"Ano ang pangalawang nobela ni Jose Rizal?",c:["Ibong Adarna","El Filibusterismo","Noli Me Tangere"],a:1,e:"Ang El Filibusterismo (1891) ang pangalawang nobela ni Rizal, na patuloy na nagkukuwento ng pakikibaka ng mga Pilipino."},
+    {q:"Ilang taon si Jose Rizal nang siya ay barilin?",c:["30 taong gulang","35 taong gulang","40 taong gulang"],a:1,e:"Binaril si Jose Rizal sa Bagumbayan (Luneta) noong Disyembre 30, 1896 sa edad na 35 taon."},
+    {q:"Ano ang tawag sa lugar kung saan binaril si Jose Rizal?",c:["Intramuros","Luneta / Bagumbayan","Malacañang"],a:1,e:"Binaril si Rizal sa Bagumbayan, na kilala rin ngayon bilang Rizal Park o Luneta sa Maynila."},
+    {q:"Sa aling bansa nag-aral si Rizal ng medisina?",c:["France","Germany","Spain"],a:2,e:"Nag-aral si Rizal ng medisina sa Unibersidad ng Madrid sa Espanya."},
+    {q:"Sino ang pangunahing tauhan sa Noli Me Tangere?",c:["Crisostomo Ibarra","Simoun","Basilio"],a:0,e:"Si Crisostomo Ibarra ang pangunahing tauhan sa Noli Me Tangere — isang batang Pilipino na nagbalik mula sa Europa."},
+    {q:"Kailan inilathala ang El Filibusterismo ni Rizal?",c:["1887","1891","1896"],a:1,e:"Inilathala ang El Filibusterismo noong 1891 sa Ghent, Belgium."},
+    {q:"Ano ang pangalang pantago ni Rizal sa kanyang mga sulat sa La Solidaridad?",c:["Laong Laan","Plaridel","Dimasalang"],a:0,e:"Gumamit si Rizal ng 'Laong Laan' bilang pseudonym sa kanyang mga artikulo sa pahayagang La Solidaridad."},
+    {q:"Sino ang nagpapayo kay Rizal na magsulat ng nobela upang ilantad ang pang-aabuso ng mga Kastila?",c:["Marcelo del Pilar","Antonio Luna","Maximo Viola"],a:2,e:"Si Maximo Viola ang kaibigan at tagasuporta ni Rizal na tumulong sa pagpapaimprenta ng Noli Me Tangere."},
+    {q:"Anong sakit ang espesyalidad ni Rizal bilang doktor?",c:["Dentista","Ophthalmologist (Sakit ng Mata)","Cardiologist"],a:1,e:"Si Rizal ay isang ophthalmologist — eksperto sa sakit ng mata. Ginamot niya pa ang sariling ina na may problema sa paningin."},
+  ],
+  hard:[
+    {q:"Ano ang buong pangalan ni Jose Rizal?",c:["Jose Protasio Rizal Mercado y Alonso Realonda","Jose Maria Rizal Santos","Jose Andres Rizal Bonifacio"],a:0,e:"Ang buong pangalan ni Rizal ay Jose Protasio Rizal Mercado y Alonso Realonda — napakahaba, 'di ba?"},
+    {q:"Saan nakulong si Rizal bago siya barilin?",c:["Dapitan","Fort Santiago","Corregidor"],a:1,e:"Nakulong si Rizal sa Fort Santiago bago siya barilin at doon niya isinulat ang 'Mi Ultimo Adios.'"},
+    {q:"Anong organisasyon ang itinatag ni Rizal noong 1892?",c:["Katipunan","La Liga Filipina","Propaganda Movement"],a:1,e:"Itinatag ni Rizal ang La Liga Filipina noong Hulyo 3, 1892 upang pagsamahin at palakasin ang mga Pilipino."},
+    {q:"Sa aling bansa inilathala ang Noli Me Tangere?",c:["Spain","Germany","Philippines"],a:1,e:"Inilathala ang Noli Me Tangere noong 1887 sa Berlin, Germany dahil mas mura ang pagpi-print doon."},
+    {q:"Sino ang alter ego ni Crisostomo Ibarra sa El Filibusterismo?",c:["Basilio","Simoun","Isagani"],a:1,e:"Si Simoun ang alter ego ni Ibarra sa El Filibusterismo — isang mayamang alahas na nagbalak ng rebolusyon."},
+    {q:"Ilang wika ang alam ni Jose Rizal ayon sa kasaysayan?",c:["Mahigit 10 wika","5 wika","3 wika"],a:0,e:"Kahanga-hanga si Rizal — nagsalita siya ng mahigit 10 wika tulad ng Tagalog, Kastila, Ingles, Pranses, Aleman, at iba pa."},
+    {q:"Anong paaralan ang unang pinasukan ni Rizal sa Maynila?",c:["Ateneo de Manila","University of Santo Tomas","La Salle"],a:0,e:"Pumasok si Rizal sa Ateneo Municipal de Manila at nag-aral nang may kahusayan."},
+    {q:"Sino ang babae na mahal ni Rizal sa Dapitan?",c:["Leonor Rivera","Josephine Bracken","Segunda Katigbak"],a:1,e:"Sa Dapitan nakilala ni Rizal si Josephine Bracken, isang Irish-Pilipina na naging katuwang niya sa kanyang mga huling taon."},
+    {q:"Anong Latin na parirala ang ginamit ni Rizal bilang epigraph sa El Filibusterismo?",c:["Veni Vidi Vici","Ubi Solitudinem Faciunt Pacem Appellant","Fiat Lux"],a:1,e:"Ang 'Ubi solitudinem faciunt, pacem appellant' (Kung saan gumawa sila ng katahimikan, tinatawag nila itong kapayapaan) ang epigraph ng El Filibusterismo — mula kay Tacitus."},
+    {q:"Ilang kapatid ang mayroon si Jose Rizal?",c:["5","9","11"],a:2,e:"Si Jose Rizal ay may 10 kapatid, kaya sila labing-isang magkakapatid sa pamilya Rizal-Alonzo."},
+  ]
+};
+
+const diffCfg={
+  easy:  {label:'🌱 Madali',     cls:'easy',  lives:3},
+  medium:{label:'🔥 Katamtaman',cls:'medium',lives:3},
+  hard:  {label:'💀 Mahirap',   cls:'hard',  lives:2},
+};
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+let playerName='', diff=null, qs=[], cur=0, score=0, lives=3, answered=false;
+let lbFromEnd=false, activeLbTab='easy';
+
+/* ═══════════════════════════════════════════
+   NAME SCREEN
+═══════════════════════════════════════════ */
+function onNameInput(){
+  const v=document.getElementById('playerNameInput').value.trim();
+  document.getElementById('continueBtn').classList.toggle('dimmed',v.length===0);
+}
+function goToDiff(){
+  const v=document.getElementById('playerNameInput').value.trim();
+  if(!v)return;
+  playerName=v;
+  document.getElementById('playerGreeting').textContent=`👋 Kumusta, ${playerName}!`;
+  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('selected'));
+  diff=null;
+  document.getElementById('startBtn').classList.add('dimmed');
+  showScreen('startScreen');
+}
+
+/* ═══════════════════════════════════════════
+   DIFFICULTY
+═══════════════════════════════════════════ */
+function selectDiff(d,btn){
+  diff=d;
+  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('startBtn').classList.remove('dimmed');
+}
+
+/* ═══════════════════════════════════════════
+   GAME
+═══════════════════════════════════════════ */
+function startGame(){
+  if(!diff)return;
+  qs=[...allQ[diff]];
+  for(let i=qs.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[qs[i],qs[j]]=[qs[j],qs[i]];}
+  cur=0;score=0;lives=diffCfg[diff].lives;answered=false;
+  const pill=document.getElementById('diffPill');
+  pill.textContent=diffCfg[diff].label;pill.className=`diff-pill ${diffCfg[diff].cls}`;
+  showScreen('quizScreen');loadQ();
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function loadQ(){
+  answered=false;
+  const q=qs[cur];
+  document.getElementById('qNumber').textContent=`Tanong ${cur+1} ng ${qs.length}`;
+  const qt=document.getElementById('qText');
+  qt.textContent=q.q;qt.classList.remove('pop-in');void qt.offsetWidth;qt.classList.add('pop-in');
+  document.getElementById('progressBar').style.width=`${(cur/qs.length)*100}%`;
+  document.getElementById('scoreDisplay').textContent=score;
+  updateLives();
+  const con=document.getElementById('choicesContainer');con.innerHTML='';
+  ['A','B','C'].forEach((lbl,i)=>{
+    const btn=document.createElement('button');btn.className='choice-btn';
+    btn.innerHTML=`<span class="choice-letter">${lbl}</span><span>${q.c[i]}</span>`;
+    btn.onclick=()=>checkAns(i,btn);con.appendChild(btn);
+  });
+  document.getElementById('feedback').className='feedback';
+  document.getElementById('nextBtn').style.display='none';
+}
+
+function checkAns(idx,btn){
+  if(answered)return;answered=true;
+  const q=qs[cur];
+  document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true);
+  if(idx===q.a){
+    btn.classList.add('correct');score++;
+    document.getElementById('scoreDisplay').textContent=score;
+    showFB(true,q.e);triggerConfetti();triggerStar();
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.choice-btn')[q.a].classList.add('correct');
+    lives--;updateLives();showFB(false,q.e);shakePage();
+  }
+  const nb=document.getElementById('nextBtn');nb.style.display='block';
+  if(lives<=0){nb.textContent='📋 Tingnan ang Resulta';nb.onclick=showEnd;}
+  else if(cur>=qs.length-1){nb.textContent='🏁 Tapos na!';nb.onclick=showEnd;}
+  else{nb.textContent='Susunod na Tanong ➡️';nb.onclick=nextQ;}
+}
+
+function showFB(ok,explain){
+  document.getElementById('feedbackIcon').textContent=ok?'🎉':'😊';
+  document.getElementById('feedbackMsg').textContent=ok?'Tama! Napakagaling mo!':"Subukan muli! Kaya mo 'yan!";
+  document.getElementById('feedbackExplain').textContent=explain;
+  document.getElementById('feedback').className=`feedback show ${ok?'correct-fb':'wrong-fb'}`;
+}
+
+function updateLives(){
+  const max=diffCfg[diff].lives;
+  document.getElementById('livesDisplay').textContent='❤️'.repeat(Math.max(lives,0))+'🖤'.repeat(Math.max(max-lives,0));
+}
+
+function nextQ(){cur++;if(cur>=qs.length||lives<=0){showEnd();return;}loadQ();}
+
+async function showEnd(){
+  showScreen('endScreen');
+  const total=qs.length,pct=score/total;
+  document.getElementById('endScore').textContent=`${score} / ${total}`;
+  let emoji,title,msg;
+  if(pct===1)       {emoji='🏆';title='Perpekto!';        msg='Kamangha-mangha! Ikaw na ang tunay na bayani ng kaalaman! 🌟';}
+  else if(pct>=.75) {emoji='🌟';title='Napakagaling!';    msg='Kahanga-hanga! Mahusay ka talaga tungkol kay Rizal! 👏';}
+  else if(pct>=.5)  {emoji='😊';title='Magaling!';        msg='Hindi masama! Subukan ulit para mapabuti pa ang score! 💪';}
+  else              {emoji='📚';title='Mag-aral Pa Tayo!';msg='Huwag mawalan ng pag-asa! Basahin pa tungkol kay Rizal! 📖';}
+  document.getElementById('endEmoji').textContent=emoji;
+  document.getElementById('endTitle').textContent=title;
+  document.getElementById('endMsg').textContent=msg;
+  const badge=document.getElementById('endDiffBadge');
+  badge.textContent=diffCfg[diff].label;badge.className=`end-diff-badge ${diffCfg[diff].cls}`;
+  if(pct>=.75)triggerConfetti();
+  // save to leaderboard
+  await saveScore(playerName,score,total,diff);
+}
+
+/* ═══════════════════════════════════════════
+   LEADERBOARD  (Supabase backend)
+   👉 Replace these two values with your own!
+═══════════════════════════════════════════ */
+const SUPABASE_URL = 'https://tvsuihoapdzomhldraoc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Qvdim6tYQnRC7cHQs8g4ig_iLvswz1_';
+
+async function loadScores(){
+  try{
+    const res=await fetch(
+      `${SUPABASE_URL}/rest/v1/leaderboard?diff=eq.${activeLbTab}&order=pct.desc,score.desc&limit=10`,
+      {headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`}}
+    );
+    if(!res.ok) throw new Error('Supabase fetch failed');
+    return await res.json();
+  }catch(e){console.warn('loadScores error',e);return [];}
+}
+
+async function saveScore(name,sc,total,difficulty){
+  try{
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/leaderboard`,{
+      method:'POST',
+      headers:{
+        apikey:SUPABASE_KEY,
+        Authorization:`Bearer ${SUPABASE_KEY}`,
+        'Content-Type':'application/json',
+        Prefer:'return=minimal'
+      },
+      body:JSON.stringify({
+        name,score:sc,total,diff:difficulty,
+        pct:Math.round((sc/total)*100),
+        date:new Date().toLocaleDateString('tl-PH',{month:'short',day:'numeric'})
+      })
+    });
+    if(!res.ok) throw new Error('Supabase insert failed');
+  }catch(e){console.warn('saveScore error',e);}
+}
+
+async function showLeaderboard(defaultTab){
+  lbFromEnd=(document.getElementById('endScreen').classList.contains('active'));
+  activeLbTab=defaultTab||'easy';
+  document.getElementById('lbPlayBtn').style.display=lbFromEnd?'none':'block';
+  document.getElementById('lbBackBtn').textContent=lbFromEnd?'⬅️ Resulta':'⬅️ Bumalik';
+  showScreen('lbScreen');
+  renderTabs();
+  await renderLb(activeLbTab);
+}
+
+function renderTabs(){
+  ['easy','medium','hard'].forEach(d=>{
+    const t=document.getElementById(`tab-${d}`);
+    t.className=`lb-tab ${d==='easy'?'':d}`;
+    if(d===activeLbTab)t.classList.add('active',d==='easy'?'easy':d);
+  });
+}
+
+async function switchTab(d){
+  activeLbTab=d;renderTabs();
+  await renderLb(d);
+}
+
+async function renderLb(d){
+  const list=document.getElementById('lbList');
+  list.innerHTML='<div style="text-align:center;padding:40px 0;font-size:1.5rem;">⏳</div>';
+  const rows=await loadScores(); // already filtered + sorted by Supabase
+  if(!rows.length){list.innerHTML='<div class="lb-empty">Wala pang scores.<br>Maging una! 🚀</div>';return;}
+  const medals=['🥇','🥈','🥉'];
+  const rowClass=['gold','silver','bronze'];
+  list.innerHTML=rows.map((r,i)=>`
+    <div class="lb-row ${rowClass[i]||''}">
+      <div class="lb-rank">${medals[i]||`#${i+1}`}</div>
+      <div class="lb-name">${escHtml(r.name)}</div>
+      <div class="lb-score">${r.score}/${r.total}</div>
+      <div class="lb-diff-tag ${r.diff}">${diffCfg[r.diff]?.label||r.diff}</div>
+      <div class="lb-date">${r.date||''}</div>
+    </div>`).join('');
+}
+
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function lbBack(){
+  if(lbFromEnd){showScreen('endScreen');}
+  else{showScreen('nameScreen');}
+}
+function lbPlay(){showScreen('nameScreen');}
+
+/* ═══════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════ */
+function triggerConfetti(){
+  const con=document.getElementById('confetti-container');
+  const cols=['#FFD93D','#FF6B6B','#4FC3F7','#56C596','#CE93D8','#FFAB40'];
+  for(let i=0;i<65;i++){
+    const p=document.createElement('div');p.className='confetti-piece';
+    p.style.cssText=`left:${Math.random()*100}%;background:${cols[~~(Math.random()*cols.length)]};width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;border-radius:${Math.random()>.5?'50%':'3px'};animation-duration:${1.2+Math.random()*1.5}s;animation-delay:${Math.random()*.6}s;`;
+    con.appendChild(p);setTimeout(()=>p.remove(),3000);
+  }
+}
+function triggerStar(){
+  const s=document.getElementById('starBurst');
+  s.style.display='block';s.style.animation='none';void s.offsetWidth;
+  s.style.animation='star-pop 0.6s ease forwards';
+  setTimeout(()=>{s.style.display='none';},700);
+}
+function shakePage(){
+  const c=document.querySelector('.card');
+  c.classList.remove('shake');void c.offsetWidth;c.classList.add('shake');
+  setTimeout(()=>c.classList.remove('shake'),600);
+}
+</script>
+</body>
+</html>
